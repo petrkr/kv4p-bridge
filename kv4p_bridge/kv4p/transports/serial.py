@@ -7,7 +7,8 @@ import threading
 import time
 from collections.abc import Callable
 
-from .protocol.kiss import KissParser, encode_kiss_frame
+from ..protocol.kiss import KissParser, encode_kiss_frame
+from . import Kv4pTransport
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +20,7 @@ _RESET_PULSE_SECONDS = 0.1
 _RESET_SETTLE_SECONDS = 0.05
 
 
-class Kv4pSerialTransport:
+class Kv4pSerialTransport(Kv4pTransport):
     """Blocking serial transport with an RX thread, for use with `Kv4pRadio`."""
 
     def __init__(self, device: str, baudrate: int) -> None:

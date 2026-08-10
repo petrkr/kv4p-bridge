@@ -33,7 +33,8 @@ from .protocol.kiss import encode_kiss_frame
 from .ptt import PttController
 from .settings import Kv4pSettings
 from .state_tracker import DeviceStateTracker
-from .transport import Kv4pSerialTransport
+from .transports import Kv4pTransport
+from .transports.serial import Kv4pSerialTransport
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +64,7 @@ class Kv4pRadio:
 
     def __init__(
         self,
-        transport: Kv4pSerialTransport,
+        transport: Kv4pTransport,
         *,
         rx_audio_open: bool = True,
         status_reports: bool = True,

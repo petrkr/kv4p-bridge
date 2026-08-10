@@ -5,7 +5,6 @@ level = "INFO"
 # Empty device keeps the KV4P serial transport disabled. Useful for dummy smoke tests.
 device = ""
 baudrate = 115200
-tx_audio_command = "0x07"
 rx_audio_open = true
 status_reports = true
 
