@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kv4p-bridge"
+version = "0.0.0"
+description = "Userspace bridge for KV4P-HT radios"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "pyserial>=3.5",
+]
+
+[project.scripts]
+kv4p-bridge = "kv4p_bridge.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["kv4p_bridge*"]

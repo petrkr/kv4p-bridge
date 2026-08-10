@@ -1,0 +1,31 @@
+[log]
+level = "INFO"
+
+[kv4p]
+# Empty device keeps the KV4P serial transport disabled. Useful for dummy smoke tests.
+device = ""
+baudrate = 115200
+tx_audio_command = "0x07"
+rx_audio_open = true
+status_reports = true
+
+[kv4p.radio]
+rx_freq = 145.500
+tx_freq = 145.500
+bandwidth = "25k"
+squelch = 1
+ctcss_rx = 0
+ctcss_tx = 0
+high_power = false
+tx_allowed = false
+rssi = false
+filter_pre = false
+filter_high = false
+filter_low = false
+
+[connector]
+type = "dummy"
+
+[connector.dummy]
+log_rx_audio = true
+log_rx_audio_every = 100
