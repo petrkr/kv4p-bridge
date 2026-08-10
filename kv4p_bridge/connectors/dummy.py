@@ -10,7 +10,7 @@ import threading
 import time
 from pathlib import Path
 
-from kv4p_bridge.kv4p.protocol.ax25 import ax25_ui_frame
+from kv4p.protocol.ax25 import ax25_ui_frame
 
 from .base import Connector
 from .adpcm import decode_block, encode_block
@@ -70,6 +70,9 @@ class DummyConnector:
 
     def on_sql(self, open: bool) -> None:
         logger.info("dummy sql %s", "open" if open else "closed")
+
+    def on_ax25_frame(self, payload: bytes) -> None:
+        logger.info("dummy ax25 frame rx bytes=%d hex=%s", len(payload), payload.hex(" "))
 
     def _stdin_loop(self) -> None:
         try:
@@ -135,7 +138,7 @@ class DummyConnector:
             info=b">OK1PKR TEST",
         )
         logger.info("dummy tx ok1pkr test start bytes=%d hex=%s", len(payload), payload.hex(" "))
-        radio.send_kiss_data(payload)
+        radio.send_ax25_frame(payload)
         if hasattr(radio, "flush"):
             radio.flush()
         logger.info("dummy tx ok1pkr test end")

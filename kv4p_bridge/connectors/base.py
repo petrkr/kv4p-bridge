@@ -17,3 +17,6 @@ class Connector(Protocol):
 
     def on_sql(self, open: bool) -> None:
         """Receive squelch state."""
+
+    def on_ax25_frame(self, payload: bytes) -> None:
+        """Receive an inbound AX.25 frame."""

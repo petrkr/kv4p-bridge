@@ -9,9 +9,9 @@ import threading
 
 from .config import load_config
 from .connectors import create_connector
-from .kv4p import Kv4pRadio, Kv4pSettings
-from .kv4p.transports.dummy import DummyTransport
-from .kv4p.transports.serial import Kv4pSerialTransport
+from kv4p import Kv4pRadio, Kv4pSettings
+from kv4p.transports.dummy import DummyTransport
+from kv4p.transports.serial import Kv4pSerialTransport
 from .log import setup_logging
 
 logger = logging.getLogger(__name__)
@@ -55,6 +55,12 @@ def main(argv: list[str] | None = None) -> int:
         except Exception:
             logger.exception("connector sql handler failed")
 
+    def on_ax25_frame(payload: bytes) -> None:
+        try:
+            connector.on_ax25_frame(payload)
+        except Exception:
+            logger.exception("connector ax25 frame handler failed")
+
     if cfg.kv4p.device:
         transport = Kv4pSerialTransport(cfg.kv4p.device, cfg.kv4p.baudrate)
     else:
@@ -67,6 +73,7 @@ def main(argv: list[str] | None = None) -> int:
         status_reports=cfg.kv4p.status_reports,
         on_rx_audio=on_rx_audio,
         on_sql=on_sql,
+        on_ax25_frame=on_ax25_frame,
     )
 
     connector.open(radio)
