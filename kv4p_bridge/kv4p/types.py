@@ -32,16 +32,6 @@ _WINDOW_UPDATE = struct.Struct("<I")
 class Version:
     """Firmware version payload."""
 
-    __slots__ = (
-        "ver",
-        "radio_module_status",
-        "window_size",
-        "rf_module_type",
-        "min_radio_freq",
-        "max_radio_freq",
-        "features",
-    )
-
     def __init__(
         self,
         ver: int,
@@ -79,18 +69,6 @@ class Version:
 
 class HostDesiredState:
     """Host desired radio/control state."""
-
-    __slots__ = (
-        "sequence",
-        "memory_id",
-        "flags",
-        "bw",
-        "freq_tx",
-        "freq_rx",
-        "ctcss_tx",
-        "squelch",
-        "ctcss_rx",
-    )
 
     def __init__(
         self,
@@ -131,22 +109,6 @@ class HostDesiredState:
 
 class DeviceState:
     """Firmware-applied state."""
-
-    __slots__ = (
-        "applied_sequence",
-        "memory_id",
-        "flags",
-        "bw",
-        "freq_tx",
-        "freq_rx",
-        "ctcss_tx",
-        "squelch",
-        "ctcss_rx",
-        "radio_module_status",
-        "mode",
-        "last_error",
-        "latest_rssi",
-    )
 
     def __init__(
         self,
@@ -209,8 +171,6 @@ class DeviceState:
 class Hello:
     """HELLO payload."""
 
-    __slots__ = ("version", "device_state")
-
     def __init__(self, version: Version, device_state: DeviceState) -> None:
         self.version = version
         self.device_state = device_state
@@ -228,8 +188,6 @@ class Hello:
 
 class WindowUpdate:
     """Flow-control window update."""
-
-    __slots__ = ("size",)
 
     def __init__(self, size: int) -> None:
         self.size = size
