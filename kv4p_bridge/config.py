@@ -65,20 +65,18 @@ class RadioConfig:
 class Kv4pConfig:
     """KV4P transport configuration."""
 
-    __slots__ = ("device", "baudrate", "tx_audio_command", "rx_audio_open", "status_reports", "radio")
+    __slots__ = ("device", "baudrate", "rx_audio_open", "status_reports", "radio")
 
     def __init__(
         self,
         device: str = "",
         baudrate: int = 115200,
-        tx_audio_command: int = 0x07,
         rx_audio_open: bool = True,
         status_reports: bool = True,
         radio: RadioConfig | None = None,
     ) -> None:
         self.device = device
         self.baudrate = baudrate
-        self.tx_audio_command = tx_audio_command
         self.rx_audio_open = rx_audio_open
         self.status_reports = status_reports
         self.radio = radio or RadioConfig()
@@ -125,7 +123,6 @@ def load_config(path: str | Path | None) -> AppConfig:
     kv4p = Kv4pConfig(
         device=kv4p_raw.get("device", ""),
         baudrate=kv4p_raw.get("baudrate", 115200),
-        tx_audio_command=_int_value(kv4p_raw.get("tx_audio_command", 0x07)),
         rx_audio_open=kv4p_raw.get("rx_audio_open", True),
         status_reports=kv4p_raw.get("status_reports", True),
         radio=radio,
@@ -137,11 +134,3 @@ def load_config(path: str | Path | None) -> AppConfig:
     connector = ConnectorConfig(type=connector_type, options=options)
 
     return AppConfig(log=log, kv4p=kv4p, connector=connector)
-
-
-def _int_value(value: object) -> int:
-    if isinstance(value, int):
-        return value
-    if isinstance(value, str):
-        return int(value, 0)
-    raise TypeError(f"expected int value, got {type(value).__name__}")

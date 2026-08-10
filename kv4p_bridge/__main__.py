@@ -10,6 +10,8 @@ import threading
 from .config import load_config
 from .connectors import create_connector
 from .kv4p import Kv4pRadio, Kv4pSettings
+from .kv4p.transports.dummy import DummyTransport
+from .kv4p.transports.serial import Kv4pSerialTransport
 from .log import setup_logging
 
 logger = logging.getLogger(__name__)
@@ -53,24 +55,14 @@ def main(argv: list[str] | None = None) -> int:
         except Exception:
             logger.exception("connector sql handler failed")
 
+    if cfg.kv4p.device:
+        transport = Kv4pSerialTransport(cfg.kv4p.device, cfg.kv4p.baudrate)
+    else:
+        logger.warning("kv4p device not configured; using DummyTransport")
+        transport = DummyTransport()
+
     radio = Kv4pRadio(
-        cfg.kv4p.device,
-        baudrate=cfg.kv4p.baudrate,
-        settings=Kv4pSettings(
-            rx_freq=cfg.kv4p.radio.rx_freq,
-            tx_freq=cfg.kv4p.radio.tx_freq,
-            bandwidth=cfg.kv4p.radio.bandwidth,
-            squelch=cfg.kv4p.radio.squelch,
-            ctcss_rx=cfg.kv4p.radio.ctcss_rx,
-            ctcss_tx=cfg.kv4p.radio.ctcss_tx,
-            high_power=cfg.kv4p.radio.high_power,
-            tx_allowed=cfg.kv4p.radio.tx_allowed,
-            rssi=cfg.kv4p.radio.rssi,
-            filter_pre=cfg.kv4p.radio.filter_pre,
-            filter_high=cfg.kv4p.radio.filter_high,
-            filter_low=cfg.kv4p.radio.filter_low,
-        ),
-        tx_audio_command=cfg.kv4p.tx_audio_command,
+        transport,
         rx_audio_open=cfg.kv4p.rx_audio_open,
         status_reports=cfg.kv4p.status_reports,
         on_rx_audio=on_rx_audio,
@@ -80,6 +72,22 @@ def main(argv: list[str] | None = None) -> int:
     connector.open(radio)
     try:
         with radio:
+            radio.configure(
+                Kv4pSettings(
+                    rx_freq=cfg.kv4p.radio.rx_freq,
+                    tx_freq=cfg.kv4p.radio.tx_freq,
+                    bandwidth=cfg.kv4p.radio.bandwidth,
+                    squelch=cfg.kv4p.radio.squelch,
+                    ctcss_rx=cfg.kv4p.radio.ctcss_rx,
+                    ctcss_tx=cfg.kv4p.radio.ctcss_tx,
+                    high_power=cfg.kv4p.radio.high_power,
+                    tx_allowed=cfg.kv4p.radio.tx_allowed,
+                    rssi=cfg.kv4p.radio.rssi,
+                    filter_pre=cfg.kv4p.radio.filter_pre,
+                    filter_high=cfg.kv4p.radio.filter_high,
+                    filter_low=cfg.kv4p.radio.filter_low,
+                )
+            )
             _wait_for_signal()
     finally:
         connector.close()
