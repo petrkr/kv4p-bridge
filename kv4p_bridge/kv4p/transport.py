@@ -1,100 +1,44 @@
-"""Serial KISS transport."""
+"""Serial transport for the KV4P-HT (ESP32) radio."""
 
 from __future__ import annotations
 
 import logging
 import threading
+import time
 from collections.abc import Callable
 
-from .protocol import KISS_FEND, KISS_FESC, KISS_TFEND, KISS_TFESC
+from .protocol.kiss import KissParser, encode_kiss_frame
 
 logger = logging.getLogger(__name__)
 
-
-class KissParser:
-    """Incremental KISS frame parser."""
-
-    def __init__(self, on_frame: Callable[[int, bytes], None]) -> None:
-        self._on_frame = on_frame
-        self._in_frame = False
-        self._escaped = False
-        self._buf = bytearray()
-
-    def feed(self, data: bytes) -> None:
-        """Feed serial bytes."""
-        for byte in data:
-            self._feed_byte(byte)
-
-    def _feed_byte(self, byte: int) -> None:
-        if byte == KISS_FEND:
-            if self._in_frame and self._buf:
-                command = self._buf[0]
-                payload = bytes(self._buf[1:])
-                logger.debug("serial rx KISS command=0x%02x payload=%d", command, len(payload))
-                self._on_frame(command, payload)
-            self._buf.clear()
-            self._in_frame = True
-            self._escaped = False
-            return
-
-        if not self._in_frame:
-            return
-
-        if self._escaped:
-            if byte == KISS_TFEND:
-                self._buf.append(KISS_FEND)
-            elif byte == KISS_TFESC:
-                self._buf.append(KISS_FESC)
-            else:
-                logger.warning("invalid KISS escape byte 0x%02x", byte)
-            self._escaped = False
-            return
-
-        if byte == KISS_FESC:
-            self._escaped = True
-            return
-
-        self._buf.append(byte)
+# Standard ESP32 auto-program circuit: RTS drives EN/CHIP_PU (reset), DTR drives
+# GPIO0 (boot mode select). pyserial dtr/rts=True is inverted to a LOW level on
+# the board through the auto-program transistors. Holding DTR deasserted while
+# pulsing RTS resets the chip into its normal firmware (not the ROM bootloader).
+_RESET_PULSE_SECONDS = 0.1
+_RESET_SETTLE_SECONDS = 0.05
 
 
-def encode_kiss_frame(command: int, payload: bytes) -> bytes:
-    """Encode a KISS frame."""
-    out = bytearray([KISS_FEND, command])
-    for byte in payload:
-        if byte == KISS_FEND:
-            out.extend((KISS_FESC, KISS_TFEND))
-        elif byte == KISS_FESC:
-            out.extend((KISS_FESC, KISS_TFESC))
-        else:
-            out.append(byte)
-    out.append(KISS_FEND)
-    return bytes(out)
+class Kv4pSerialTransport:
+    """Blocking serial transport with an RX thread, for use with `Kv4pRadio`."""
 
-
-class KissSerialTransport:
-    """Blocking serial transport with RX thread."""
-
-    def __init__(
-        self,
-        device: str,
-        baudrate: int,
-        on_frame: Callable[[int, bytes], None],
-    ) -> None:
+    def __init__(self, device: str, baudrate: int) -> None:
         self._device = device
         self._baudrate = baudrate
-        self._parser = KissParser(on_frame)
+        self._parser: KissParser | None = None
         self._serial = None
         self._thread: threading.Thread | None = None
         self._stop = threading.Event()
         self._write_lock = threading.Lock()
 
-    def open(self) -> None:
-        """Open serial port and start RX thread."""
+    def open(self, on_frame: Callable[[int, bytes], None]) -> None:
+        """Open serial port and start the RX thread."""
         import serial
 
+        self._parser = KissParser(on_frame)
         self._serial = serial.Serial(self._device, self._baudrate, timeout=0.2)
-        self._serial.rts = True
-        self._serial.dtr = True
+        self._serial.rts = False
+        self._serial.dtr = False
         self._stop.clear()
 
         self._thread = threading.Thread(
@@ -125,6 +69,22 @@ class KissSerialTransport:
 
         logger.info("serial closed")
 
+    def reset(self) -> None:
+        """Hardware-reset the ESP32 into its normal firmware via an RTS pulse.
+
+        DTR is held deasserted throughout so GPIO0 stays in run mode (not
+        bootloader mode); RTS is pulsed to toggle EN/CHIP_PU.
+        """
+        with self._write_lock:
+            if self._serial is None:
+                raise RuntimeError("serial transport is not open")
+            self._serial.dtr = False
+            self._serial.rts = True
+            time.sleep(_RESET_PULSE_SECONDS)
+            self._serial.rts = False
+            time.sleep(_RESET_SETTLE_SECONDS)
+        logger.info("serial reset device=%s", self._device)
+
     def write_frame(self, command: int, payload: bytes) -> None:
         """Write one KISS frame."""
         frame = encode_kiss_frame(command, payload)
@@ -152,4 +112,5 @@ class KissSerialTransport:
                 return
 
             if data:
+                assert self._parser is not None
                 self._parser.feed(data)
