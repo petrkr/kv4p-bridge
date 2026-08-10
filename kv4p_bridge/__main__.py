@@ -9,7 +9,7 @@ import threading
 
 from .config import load_config
 from .connectors import create_connector
-from kv4p import Kv4pRadio, Kv4pSettings
+from kv4p import Kv4pRadio
 from kv4p.transports.dummy import DummyTransport
 from kv4p.transports.serial import Kv4pSerialTransport
 from .log import setup_logging
@@ -79,22 +79,33 @@ def main(argv: list[str] | None = None) -> int:
     connector.open(radio)
     try:
         with radio:
-            radio.configure(
-                Kv4pSettings(
-                    rx_freq=cfg.kv4p.radio.rx_freq,
-                    tx_freq=cfg.kv4p.radio.tx_freq,
-                    bandwidth=cfg.kv4p.radio.bandwidth,
-                    squelch=cfg.kv4p.radio.squelch,
-                    ctcss_rx=cfg.kv4p.radio.ctcss_rx,
-                    ctcss_tx=cfg.kv4p.radio.ctcss_tx,
-                    high_power=cfg.kv4p.radio.high_power,
-                    tx_allowed=cfg.kv4p.radio.tx_allowed,
-                    rssi=cfg.kv4p.radio.rssi,
-                    filter_pre=cfg.kv4p.radio.filter_pre,
-                    filter_high=cfg.kv4p.radio.filter_high,
-                    filter_low=cfg.kv4p.radio.filter_low,
-                )
-            )
+            # radio.freq_rx/bandwidth/squelch/... are already seeded from the
+            # firmware's actual tuned state (HELLO's DeviceState) — only push
+            # a set_*() when the configured value actually differs from it.
+            radio_cfg = cfg.kv4p.radio
+            rx = radio_cfg.rx_freq if radio_cfg.rx_freq != radio.freq_rx else None
+            tx = radio_cfg.tx_freq if radio_cfg.tx_freq != radio.freq_tx else None
+            if rx is not None or tx is not None:
+                radio.set_frequency(rx=rx, tx=tx)
+            if radio_cfg.bandwidth != radio.bandwidth:
+                radio.set_bandwidth(radio_cfg.bandwidth)
+            if radio_cfg.squelch != radio.squelch:
+                radio.set_squelch(radio_cfg.squelch)
+            ctcss_rx = radio_cfg.ctcss_rx if radio_cfg.ctcss_rx != radio.ctcss_rx else None
+            ctcss_tx = radio_cfg.ctcss_tx if radio_cfg.ctcss_tx != radio.ctcss_tx else None
+            if ctcss_rx is not None or ctcss_tx is not None:
+                radio.set_ctcss(rx=ctcss_rx, tx=ctcss_tx)
+            if radio_cfg.high_power != radio.high_power:
+                radio.set_high_power(radio_cfg.high_power)
+            if radio_cfg.tx_allowed != radio.tx_allowed:
+                radio.set_tx_allowed(radio_cfg.tx_allowed)
+            if radio_cfg.rssi != radio.rssi:
+                radio.set_rssi(radio_cfg.rssi)
+            pre = radio_cfg.filter_pre if radio_cfg.filter_pre != radio.filter_pre else None
+            high = radio_cfg.filter_high if radio_cfg.filter_high != radio.filter_high else None
+            low = radio_cfg.filter_low if radio_cfg.filter_low != radio.filter_low else None
+            if pre is not None or high is not None or low is not None:
+                radio.set_filters(pre=pre, high=high, low=low)
             _wait_for_signal()
     finally:
         connector.close()
