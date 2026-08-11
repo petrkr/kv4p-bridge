@@ -67,19 +67,16 @@ def main(argv: list[str] | None = None) -> int:
         logger.warning("kv4p device not configured; using DummyTransport")
         transport = DummyTransport()
 
-    radio = Kv4pRadio(
-        transport,
-        on_rx_audio=on_rx_audio,
-        on_sql=on_sql,
-        on_ax25_frame=on_ax25_frame,
-    )
+    radio = Kv4pRadio(transport)
 
     connector.open(radio)
     try:
         with radio:
-            # radio.freq_rx/bandwidth/squelch/... are already seeded from the
-            # firmware's actual tuned state (HELLO's DeviceState) — only push
-            # a set_*() when the configured value actually differs from it.
+            # Register callbacks
+            radio.on_ax25_frame(on_ax25_frame)
+            radio.on_sql(on_sql)
+            radio.on_rx_audio(on_rx_audio)
+
             radio_cfg = cfg.kv4p.radio
             if radio_cfg.rx_freq != radio.freq_rx or radio_cfg.tx_freq != radio.freq_tx:
                 radio.set_frequency(radio_cfg.rx_freq, radio_cfg.tx_freq)
