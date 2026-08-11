@@ -3,23 +3,17 @@
 from __future__ import annotations
 
 import logging
-import math
-import struct
 import sys
 import threading
 import time
-from pathlib import Path
 
 from kv4p.protocol.ax25 import ax25_ui_frame
 
 from .base import Connector
-from .adpcm import decode_block, encode_block
 from .opus import OPUS_FRAME_SAMPLES, OPUS_SAMPLE_RATE, silence_packet, tone_packets
 
 logger = logging.getLogger(__name__)
 
-AUDIO_SAMPLE_RATE = 16000
-AUDIO_FRAME_SAMPLES = 249
 TX_AUDIO_PREROLL_FRAMES = 1
 TX_AUDIO_TAIL_FRAMES = 1
 TX_AUDIO_BURST_FRAMES = 0
@@ -206,37 +200,6 @@ def create_dummy_connector(options: dict[str, object]) -> Connector:
         log_rx_audio=bool(options.get("log_rx_audio", True)),
         log_rx_audio_every=int(options.get("log_rx_audio_every", 100)),
     )
-
-
-def _tone_payloads(duration_sec: float, frequency_hz: float, square: bool = False) -> list[bytes]:
-    total_samples = int(AUDIO_SAMPLE_RATE * duration_sec)
-    amplitude = 24000
-    payloads = []
-    offset = 0
-    while offset < total_samples:
-        frame = []
-        for i in range(AUDIO_FRAME_SAMPLES):
-            sample_index = offset + i
-            if sample_index >= total_samples:
-                frame.append(0)
-            else:
-                phase = math.sin(2.0 * math.pi * frequency_hz * sample_index / AUDIO_SAMPLE_RATE)
-                if square:
-                    sample = 1.0 if phase >= 0.0 else -1.0
-                else:
-                    sample = phase
-                frame.append(int(sample * amplitude))
-        payloads.append(encode_block(frame))
-        offset += AUDIO_FRAME_SAMPLES
-    return payloads
-
-
-def _send_silence_preroll(radio: object) -> None:
-    silence = encode_block([0] * AUDIO_FRAME_SAMPLES)
-    logger.info("dummy tx audio preroll frames=%d bytes=%d", TX_AUDIO_PREROLL_FRAMES, len(silence))
-    for _ in range(TX_AUDIO_PREROLL_FRAMES):
-        radio.send_tx_audio(silence)
-        time.sleep(AUDIO_FRAME_SAMPLES / AUDIO_SAMPLE_RATE)
 
 
 def _send_opus_silence_preroll(radio: object) -> None:
