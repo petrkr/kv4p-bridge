@@ -83,10 +83,8 @@ def main(argv: list[str] | None = None) -> int:
             # firmware's actual tuned state (HELLO's DeviceState) — only push
             # a set_*() when the configured value actually differs from it.
             radio_cfg = cfg.kv4p.radio
-            rx = radio_cfg.rx_freq if radio_cfg.rx_freq != radio.freq_rx else None
-            tx = radio_cfg.tx_freq if radio_cfg.tx_freq != radio.freq_tx else None
-            if rx is not None or tx is not None:
-                radio.set_frequency(rx=rx, tx=tx)
+            if radio_cfg.rx_freq != radio.freq_rx or radio_cfg.tx_freq != radio.freq_tx:
+                radio.set_frequency(radio_cfg.rx_freq, radio_cfg.tx_freq)
             if radio_cfg.bandwidth != radio.bandwidth:
                 radio.set_bandwidth(radio_cfg.bandwidth)
             if radio_cfg.squelch != radio.squelch:
