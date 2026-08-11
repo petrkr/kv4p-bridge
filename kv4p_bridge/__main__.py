@@ -69,8 +69,6 @@ def main(argv: list[str] | None = None) -> int:
 
     radio = Kv4pRadio(
         transport,
-        rx_audio_open=cfg.kv4p.rx_audio_open,
-        status_reports=cfg.kv4p.status_reports,
         on_rx_audio=on_rx_audio,
         on_sql=on_sql,
         on_ax25_frame=on_ax25_frame,
@@ -99,6 +97,10 @@ def main(argv: list[str] | None = None) -> int:
                 radio.set_tx_allowed(radio_cfg.tx_allowed)
             if radio_cfg.rssi != radio.rssi:
                 radio.set_rssi(radio_cfg.rssi)
+            if cfg.kv4p.rx_audio_open != radio.rx_audio_open:
+                radio.set_rx_audio_open(cfg.kv4p.rx_audio_open)
+            if cfg.kv4p.status_reports != radio.status_reports:
+                radio.set_status_reports(cfg.kv4p.status_reports)
             pre = radio_cfg.filter_pre if radio_cfg.filter_pre != radio.filter_pre else None
             high = radio_cfg.filter_high if radio_cfg.filter_high != radio.filter_high else None
             low = radio_cfg.filter_low if radio_cfg.filter_low != radio.filter_low else None
