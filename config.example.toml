@@ -42,3 +42,17 @@ log_rx_audio_every = 100
 # output_device = ""
 #
 # Runtime stdin commands: p = toggle PTT, 0-8 = set squelch level.
+
+# Alternative: bridge to SvxLink. See README.md for the matching svxlink.conf
+# setup and why RX/TX need separate ports.
+#
+# [connector]
+# type = "svxlink"
+#
+# [connector.svxlink]
+# remote_host = "127.0.0.1"
+# remote_port = 10100
+# bind_host = "127.0.0.1"
+# bind_port = 10101
+# sql_pty_path = "/tmp/kv4p_sql"
+# ptt_pty_path = "/tmp/kv4p_ptt"

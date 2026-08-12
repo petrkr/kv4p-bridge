@@ -7,6 +7,7 @@ from kv4p_bridge.config import ConnectorConfig
 from .audio import create_audio_connector
 from .base import Connector
 from .dummy import create_dummy_connector
+from .svxlink import create_svxlink_connector
 
 
 def create_connector(config: ConnectorConfig) -> Connector:
@@ -15,4 +16,6 @@ def create_connector(config: ConnectorConfig) -> Connector:
         return create_dummy_connector(config.options)
     if config.type == "audio":
         return create_audio_connector(config.options)
+    if config.type == "svxlink":
+        return create_svxlink_connector(config.options)
     raise ValueError(f"unknown connector type: {config.type}")
