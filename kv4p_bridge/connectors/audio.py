@@ -14,6 +14,7 @@ from .opus import (
     decode_packet,
     encode_pcm_packets,
     new_decoder,
+    new_encoder,
 )
 
 logger = logging.getLogger(__name__)
@@ -66,6 +67,9 @@ class AudioConnector:
         self._squelch = 1
         self._pcm_buffer = bytearray()
         self._frame_bytes = OPUS_FRAME_SAMPLES * 2
+        # Opus is stateful (inter-frame prediction) -- one encoder instance
+        # must be reused across the whole TX stream, not recreated per frame.
+        self._encoder = new_encoder()
 
     def open(self, radio: object) -> None:
         self._radio = radio
@@ -218,7 +222,7 @@ class AudioConnector:
             frame = bytes(self._pcm_buffer[: self._frame_bytes])
             del self._pcm_buffer[: self._frame_bytes]
             try:
-                payloads = encode_pcm_packets(frame)
+                payloads = encode_pcm_packets(frame, self._encoder)
             except Exception:
                 logger.exception("audio tx encode failed")
                 continue
