@@ -31,9 +31,22 @@ def silence_packet() -> bytes:
     return packets[0]
 
 
-def encode_pcm_packets(pcm_s16le: bytes) -> list[bytes]:
-    """Encode 48 kHz mono s16le PCM into raw Opus packets, one per OPUS_FRAME_SAMPLES."""
-    encoder = opuslib.Encoder(OPUS_SAMPLE_RATE, 1, opuslib.APPLICATION_VOIP)
+def new_encoder() -> opuslib.Encoder:
+    """Create a mono 48 kHz Opus encoder."""
+    return opuslib.Encoder(OPUS_SAMPLE_RATE, 1, opuslib.APPLICATION_VOIP)
+
+
+def encode_pcm_packets(pcm_s16le: bytes, encoder: opuslib.Encoder | None = None) -> list[bytes]:
+    """Encode 48 kHz mono s16le PCM into raw Opus packets, one per OPUS_FRAME_SAMPLES.
+
+    Opus is a stateful codec (inter-frame prediction), so pass a single
+    `encoder` reused across consecutive calls for a continuous stream --
+    otherwise each call restarts encoder state and introduces artifacts at
+    frame boundaries. Only omit `encoder` for one-shot, self-contained
+    encodes of a full buffer in one call (e.g. test tones).
+    """
+    if encoder is None:
+        encoder = new_encoder()
     frame_bytes = OPUS_FRAME_SAMPLES * 2  # 16-bit mono
     packets = []
     for offset in range(0, len(pcm_s16le), frame_bytes):
