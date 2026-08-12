@@ -7,8 +7,7 @@ import sys
 import threading
 import time
 
-from kv4p.protocol.ax25 import ax25_ui_frame
-
+from .ax25 import ax25_ui_frame
 from .base import Connector
 from .opus import OPUS_FRAME_SAMPLES, OPUS_SAMPLE_RATE, silence_packet, tone_packets
 
