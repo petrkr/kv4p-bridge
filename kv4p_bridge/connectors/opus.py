@@ -42,3 +42,13 @@ def encode_pcm_packets(pcm_s16le: bytes) -> list[bytes]:
             frame = frame + bytes(frame_bytes - len(frame))
         packets.append(encoder.encode(frame, OPUS_FRAME_SAMPLES))
     return packets
+
+
+def new_decoder() -> opuslib.Decoder:
+    """Create a mono 48 kHz Opus decoder."""
+    return opuslib.Decoder(OPUS_SAMPLE_RATE, 1)
+
+
+def decode_packet(decoder: opuslib.Decoder, payload: bytes) -> bytes:
+    """Decode one raw Opus packet into 16-bit mono PCM."""
+    return decoder.decode(payload, OPUS_FRAME_SAMPLES)
