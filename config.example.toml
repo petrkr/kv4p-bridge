@@ -28,3 +28,17 @@ type = "dummy"
 [connector.dummy]
 log_rx_audio = true
 log_rx_audio_every = 100
+
+# Alternative: live playback/capture via the system soundcard.
+# Requires the optional 'audio' extra: pip install kv4p-bridge[audio]
+#
+# [connector]
+# type = "audio"
+#
+# [connector.audio]
+# # Device index or name understood by sounddevice/PortAudio.
+# # Leave unset to use the system default input/output device.
+# input_device = ""
+# output_device = ""
+#
+# Runtime stdin commands: p = toggle PTT, 0-8 = set squelch level.

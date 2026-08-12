@@ -13,6 +13,11 @@ dependencies = [
   "opuslib>=3.0",
 ]
 
+[project.optional-dependencies]
+audio = [
+  "sounddevice>=0.4",
+]
+
 [project.scripts]
 kv4p-bridge = "kv4p_bridge.__main__:main"
 
